@@ -19,7 +19,7 @@ import verifyToken from "./middlewares/verifyToken.js";
 const app = express();
 const port = process.env.PORT || 5000;
 
-const allowedOrigins = ['https://probo-admin.onrender.com/', 'https://probo-web.onrender.com/'];
+const allowedOrigins = ['https://probo-admin.onrender.com', 'https://probo-web.onrender.com'];
 
 //  Middlewares
 app.use(express.json());
