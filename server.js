@@ -34,13 +34,15 @@ app.use(cors({
           callback(new Error('Not allowed by CORS'));
       }
   },
-  credentials: true // cookies ya tokens ke liye
+  credentials: true ,
+  allowedHeaders: ['Authorization', 'Content-Type']
 }));
 // Cors
 app.use(
   cors({
     origin: [process.env.CLIENT_URL1, process.env.CLIENT_URL2],
     credentials: true,
+    allowedHeaders: ['Authorization', 'Content-Type']
   })
 );
 
