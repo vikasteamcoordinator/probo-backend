@@ -19,9 +19,23 @@ import verifyToken from "./middlewares/verifyToken.js";
 const app = express();
 const port = process.env.PORT || 5000;
 
+const allowedOrigins = ['https://probo-admin.onrender.com/', 'https://probo-web.onrender.com/'];
+
 //  Middlewares
 app.use(express.json());
 
+// CORS middleware
+app.use(cors({
+  origin: function (origin, callback) {
+      // Agar origin allowedOrigins me hai ya undefined (for non-browser clients) hai, to allow karo
+      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+          callback(null, true);
+      } else {
+          callback(new Error('Not allowed by CORS'));
+      }
+  },
+  credentials: true // cookies ya tokens ke liye
+}));
 // Cors
 app.use(
   cors({
