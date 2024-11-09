@@ -19,66 +19,58 @@ import verifyToken from "./middlewares/verifyToken.js";
 const app = express();
 const port = process.env.PORT || 5000;
 
-const allowedOrigins = ['https://probo-admin.onrender.com', 'https://probo-web.onrender.com'];
-
-//  Middlewares
-app.use(express.json());
+const allowedOrigins = [
+  'https://probo-admin.onrender.com', 
+  'https://probo-web.onrender.com'
+];
 
 // CORS middleware
 app.use(cors({
   origin: function (origin, callback) {
-      // Agar origin allowedOrigins me hai ya undefined (for non-browser clients) hai, to allow karo
-      if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-          callback(null, true);
-      } else {
-          callback(new Error('Not allowed by CORS'));
-      }
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
-  credentials: true ,
+  credentials: true,
   allowedHeaders: ['Authorization', 'Content-Type']
 }));
-// Cors
-app.use(
-  cors({
-    origin: [process.env.CLIENT_URL1, process.env.CLIENT_URL2],
-    credentials: true,
-    allowedHeaders: ['Authorization', 'Content-Type']
-  })
-);
 
 // Cookie parser
 app.use(cookieParser());
 
-//To verify jwt token
-app.use(verifyToken);
+// JSON middleware
+app.use(express.json());
 
-// Public folder
+// Static public folder
 app.use(express.static("public"));
 
-// Home
+// JWT verification
+app.use(verifyToken);
+
+// Home route
 app.get("/", (req, res) => {
   res.send("Hello world");
 });
 
-// Graphql
+// GraphQL handler
 app.all(
   "/graphql",
   (req, res, next) => {
-    req.res = res; // attach res to req object
+    req.res = res; // Attach res to req object
     next();
   },
   createHandler({
     schema,
-    context: (req) => {
-      return {
-        req,
-        res: req.res,
-      };
-    },
+    context: (req) => ({
+      req,
+      res: req.res,
+    }),
   })
 );
 
-//  Routes
+// Image upload and payment routes
 logosUpload(app);
 homeImgUpload(app);
 productImgUpload(app);
@@ -88,19 +80,18 @@ stripePayment(app);
 razorpay(app);
 googleAuth(app);
 
-//  Mongodb connection
+// MongoDB connection
 mongoose.set("strictQuery", false);
-
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => {
     console.log("Mongodb DB Connected Successfully 🚀");
   })
   .catch((error) => {
-    console.log(error);
+    console.error("MongoDB connection error:", error);
   });
 
-//  Port
+// Start server
 app.listen(port, () => {
   console.log(`Backend Server Running On Port ${port} 🚀`);
 });
