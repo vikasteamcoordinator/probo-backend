@@ -19,42 +19,46 @@ import verifyToken from "./middlewares/verifyToken.js";
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Define allowed origins for CORS
 const allowedOrigins = [
-  'https://probo-admin.onrender.com', 
-  'https://probo-web.onrender.com'
+  process.env.CLIENT_URL1 || 'https://probo-admin.onrender.com',
+  process.env.CLIENT_URL2 || 'https://probo-web.onrender.com'
 ];
 
-// CORS middleware
-app.use(cors({
-  origin: function (origin, callback) {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  allowedHeaders: ['Authorization', 'Content-Type']
-}));
+// Middlewares
+app.use(express.json());
+
+// Single CORS configuration
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests from allowed origins or non-browser clients (no origin)
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    allowedHeaders: ['Authorization', 'Content-Type']
+  })
+);
 
 // Cookie parser
 app.use(cookieParser());
 
-// JSON middleware
-app.use(express.json());
-
-// Static public folder
-app.use(express.static("public"));
-
-// JWT verification
+// JWT token verification
 app.use(verifyToken);
+
+// Public folder
+app.use(express.static("public"));
 
 // Home route
 app.get("/", (req, res) => {
   res.send("Hello world");
 });
 
-// GraphQL handler
+// GraphQL endpoint
 app.all(
   "/graphql",
   (req, res, next) => {
@@ -63,14 +67,16 @@ app.all(
   },
   createHandler({
     schema,
-    context: (req) => ({
-      req,
-      res: req.res,
-    }),
+    context: (req) => {
+      return {
+        req,
+        res: req.res,
+      };
+    },
   })
 );
 
-// Image upload and payment routes
+// Routes
 logosUpload(app);
 homeImgUpload(app);
 productImgUpload(app);
@@ -82,16 +88,26 @@ googleAuth(app);
 
 // MongoDB connection
 mongoose.set("strictQuery", false);
+
 mongoose
   .connect(process.env.MONGO_URL)
   .then(() => {
     console.log("Mongodb DB Connected Successfully 🚀");
   })
   .catch((error) => {
-    console.error("MongoDB connection error:", error);
+    console.log(error);
   });
 
-// Start server
+// Start server on specified port
 app.listen(port, () => {
   console.log(`Backend Server Running On Port ${port} 🚀`);
+});
+
+// Error handling for CORS
+app.use((err, req, res, next) => {
+  if (err instanceof Error && err.message === 'Not allowed by CORS') {
+    res.status(403).json({ message: 'CORS Error: Access Denied' });
+  } else {
+    next(err);
+  }
 });
